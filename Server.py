@@ -13,27 +13,31 @@ score1 = 0
 score2 = 0
 clients = []
 check = []
-PLAY_TIME = 10
-BROADCAST_TIME = 10
+BROADCAST = 10
+PLAYTIME = 10
+Finished = False
+
 
 
 def broadcast():
-    global BROADCAST_TIME
+    global BROADCAST, Finished
     server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
     # server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     server_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     server_socket.settimeout(0.2)
     msg = struct.pack('Ibh', 0xfeedbeef, 0x2, 30546)
 
-    t_end = time.time() + BROADCAST_TIME
+    t_end = time.time() + BROADCAST
     print("server listening . . .")
     while time.time() < t_end:
         server_socket.sendto(msg, ('<broadcast>', 13117))
         time.sleep(1)
+    while not Finished:
+        time.sleep(1)
 
 
 def mission(client):
-    global PLAY_TIME
+    global PLAYTIME, Finished
     data = client.recv(1024)
     data = data.decode('ascii')
     print(data)
@@ -77,7 +81,7 @@ def mission(client):
             client.send(b'oki')
             print_lock.release()
             count = 0
-            t_end = time.time() + PLAY_TIME
+            t_end = time.time() + PLAYTIME
             data = None
             while time.time() < t_end:
                 if data:
@@ -123,6 +127,9 @@ def mission(client):
                 if data:
                     count3 += 1
 
+            time.sleep(1)
+            Finished = True
+
     client.close()
 
 
@@ -134,7 +141,7 @@ def establish_tcp():
     server_socket.bind((host, port))
     print("server listening TCP . . .")
     server_socket.listen(4)
-    while True:
+    while not Finished:
         if count < 4:
             client, addr = server_socket.accept()
             print_lock.acquire()
@@ -153,3 +160,6 @@ t2 = threading.Thread(target=establish_tcp)
 
 t1.start()
 t2.start()
+
+t1.join()
+t2.join()
