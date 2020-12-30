@@ -17,6 +17,8 @@ BROADCAST = 30
 PLAYTIME = 10
 Finished = False
 Start = True
+SERVER_IP = gethostbyname(gethostname())
+SERVER_PORT = 30546
 
 
 def broadcast():
@@ -24,6 +26,7 @@ def broadcast():
     server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
     server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     server_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    server_socket.bind((SERVER_IP, SERVER_PORT))
     server_socket.settimeout(0.2)
     msg = struct.pack('Ibh', 0xfeedbeef, 0x2, 30546)
 
@@ -65,7 +68,7 @@ def mission(client):
         msg = "\nWelcome to Keyboard Spamming Battle Royal!\n " \
               "Group 1: \n" \
               "== \n" + str(group1[0]) + str(group1[1]) + "\n\n" + "Group 2: \n" + "== \n" + str(group2[0]) + str(group2[1]) + "\n" + \
-              "Start pressing keys on your keyboard as fast as you can!"
+              "Start pressing keys (press enter after each key)"
         client.send(msg.encode('ascii'))
 
         time.sleep(1)
@@ -115,7 +118,7 @@ def establish_tcp():
     port = 30546
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.settimeout(1)
-    server_socket.bind((host, port))
+    server_socket.bind((SERVER_IP, SERVER_PORT))
     print("server listening TCP . . .")
     server_socket.listen(4)
     while not Finished:
