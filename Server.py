@@ -13,16 +13,19 @@ score1 = 0
 score2 = 0
 clients = []
 check = []
+PLAY_TIME = 10
+BROADCAST_TIME = 10
 
 
 def broadcast():
+    global BROADCAST_TIME
     server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
     # server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     server_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     server_socket.settimeout(0.2)
     msg = struct.pack('Ibh', 0xfeedbeef, 0x2, 30546)
 
-    t_end = time.time() + 60
+    t_end = time.time() + BROADCAST_TIME
     print("server listening . . .")
     while time.time() < t_end:
         server_socket.sendto(msg, ('<broadcast>', 13117))
@@ -74,7 +77,7 @@ def mission(client):
             client.send(b'oki')
             print_lock.release()
             count = 0
-            t_end = time.time() + 10
+            t_end = time.time() + PLAY_TIME
             data = None
             while time.time() < t_end:
                 if data:
@@ -114,24 +117,32 @@ def mission(client):
                                                                                                            "Group 2 wins!"
             client.send(msg.encode('ascii'))
 
+            count3 = 0
+            while count3 != 1:
+                client.recv(1)
+                if data:
+                    count3 += 1
+
     client.close()
 
 
 def establish_tcp():
     host = ""
+    count = 0
     port = 30546
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind((host, port))
     print("server listening TCP . . .")
     server_socket.listen(4)
     while True:
-        count = 0
-        client, addr = server_socket.accept()
-        print_lock.acquire()
-        print('Connected to :', addr[0], ':', addr[1])
-        clients.append(client)
-        start_new_thread(mission, (client,))
-        if len(clients) == 4:
+        if count < 4:
+            client, addr = server_socket.accept()
+            print_lock.acquire()
+            print('Connected to :', addr[0], ':', addr[1])
+            count += 1
+            clients.append(client)
+            start_new_thread(mission, (client,))
+        if count == 4:
             break
 
     server_socket.close()

@@ -50,6 +50,7 @@ data = client_socket.recv(40)
 print(data.decode('ascii'))
 data = client_socket.recv(1024)
 print(data.decode('ascii'))
+client_socket.send(b'ok')
 client_socket.close()
 
 
