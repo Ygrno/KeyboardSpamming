@@ -3,10 +3,11 @@ import time
 from socket import *
 
 Running = False
+PLAYTIME = 10
 
 
 def client_app():
-    global Running
+    global Running, PLAYTIME
     Running = True
     print("Client - Side")
     client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
@@ -34,7 +35,11 @@ def client_app():
     print("Received offer from - " + str(addr[0]) + " attempting to connect...")
 
     client_socket = socket(AF_INET, SOCK_STREAM)
-    client_socket.connect((addr[0], encode_data[2]))
+    try:
+        client_socket.connect((addr[0], encode_data[2]))
+    except:
+        Running = False
+        return
 
     # Client send his Team Name
     msg = "BitHackers1\n"
@@ -44,32 +49,28 @@ def client_app():
     data = client_socket.recv(1024)
     print(data.decode('ascii'))
 
-    client_socket.send(b'ok')
-    data = client_socket.recv(4)
-    print(data)
-
-    while True:
-        if data == b'n':
-            break
+    t_end = time.time() + PLAYTIME + 5
+    while time.time() < t_end:
         ans = input()
         client_socket.send(ans.encode('ascii'))
-        data = client_socket.recv(1)
-        print(data)
 
-    client_socket.send(b'ok')
+    # client_socket.send(b'ok')
+    # Client receive how many keys he typed
     data = client_socket.recv(40)
     print(data.decode('ascii'))
+    # Client receive summary message
     data = client_socket.recv(1024)
     print(data.decode('ascii'))
-    client_socket.send(b'ok')
+
+    # client_socket.send(b'ok')
     client_socket.close()
-    print("Server disconnected, listening for offer requests. . .")
+    print("Server disconnected, listening for offer requests. . .\n")
     Running = False
 
 
 while not Running:
     client_app()
-    time.sleep(5)
+    time.sleep(8)
 
 
 
