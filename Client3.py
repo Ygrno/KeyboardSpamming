@@ -69,7 +69,10 @@ def client_app():
 
 
 while not Running:
-    client_app()
+    try:
+        client_app()
+    except:
+        Running = False
     time.sleep(8)
 
 
