@@ -13,16 +13,16 @@ score1 = 0
 score2 = 0
 clients = []
 check = []
-BROADCAST = 10
+BROADCAST = 30
 PLAYTIME = 10
 Finished = False
-
+Start = True
 
 
 def broadcast():
     global BROADCAST, Finished
     server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-    # server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     server_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     server_socket.settimeout(0.2)
     msg = struct.pack('Ibh', 0xfeedbeef, 0x2, 30546)
@@ -38,9 +38,11 @@ def broadcast():
 
 def mission(client):
     global PLAYTIME, Finished
+    # Server receives Team Name from client
     data = client.recv(1024)
     data = data.decode('ascii')
     print(data)
+
     teams.append(data)
     i = 0
     j = 0
@@ -134,6 +136,7 @@ def mission(client):
 
 
 def establish_tcp():
+    global Finished, Start
     host = ""
     count = 0
     port = 30546
@@ -149,17 +152,29 @@ def establish_tcp():
             count += 1
             clients.append(client)
             start_new_thread(mission, (client,))
-        if count == 4:
-            break
 
     server_socket.close()
+    print("Game over, sending out offer requests...")
+    Start = True
 
 
-t1 = threading.Thread(target=broadcast)
-t2 = threading.Thread(target=establish_tcp)
+while True:
+    if Start:
+        Start = False
+        Finished = False
+        check.clear()
+        clients.clear()
+        score1 = 0
+        score2 = 0
+        group1.clear()
+        group2.clear()
+        teams.clear()
 
-t1.start()
-t2.start()
+        t1 = threading.Thread(target=broadcast)
+        t2 = threading.Thread(target=establish_tcp)
 
-t1.join()
-t2.join()
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
