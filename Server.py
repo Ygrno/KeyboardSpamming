@@ -33,7 +33,7 @@ def broadcast():
 
 
 def mission(client):
-
+    global PLAY_TIME
     data = client.recv(1024)
     data = data.decode('ascii')
     print(data)
