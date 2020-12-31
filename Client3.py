@@ -75,6 +75,3 @@ while not Running:
     except:
         Running = False
     time.sleep(8)
-
-
-
