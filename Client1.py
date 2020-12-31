@@ -62,7 +62,7 @@ def client_app():
     data = client_socket.recv(1024)
     print(data.decode('ascii'))
 
-    # client_socket.send(b'ok')
+    #client_socket.send(b'ok')
     client_socket.close()
     print("Server disconnected, listening for offer requests. . .\n")
     Running = False
