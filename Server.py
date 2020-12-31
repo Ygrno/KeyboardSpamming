@@ -18,22 +18,29 @@ PLAYTIME = 10
 Finished = False
 Start = True
 SERVER_IP = gethostbyname(gethostname())
-SERVER_PORT = 30546
+TCPORT = 30546
+UDPORT = 13117
 
 
 def broadcast():
     global BROADCAST, Finished
+    # initializing socket
     server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
     server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    # Using broadcast
     server_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-    server_socket.bind((SERVER_IP, SERVER_PORT))
+    # binding port and host
+    server_socket.bind((SERVER_IP, TCPORT))
+    # Setting timeout for establish connection
     server_socket.settimeout(0.2)
-    msg = struct.pack('Ibh', 0xfeedbeef, 0x2, 30546)
+    # The massage that will be broadcast
+    msg = struct.pack('Ibh', 0xfeedbeef, 0x2, TCPORT)
 
+    # Setting time for the server to broadcast the message every 1 second
     t_end = time.time() + BROADCAST
     print("server listening . . .")
     while time.time() < t_end:
-        server_socket.sendto(msg, ('<broadcast>', 13117))
+        server_socket.sendto(msg, ('<broadcast>', UDPORT))
         time.sleep(1)
     while not Finished:
         time.sleep(1)
@@ -45,6 +52,8 @@ def mission(client):
     data = client.recv(1024)
     data = data.decode('ascii')
     print(data)
+
+    # Server assign team to a group
     teams.append(data)
     j = int
     if len(group1) < 2:
@@ -65,6 +74,7 @@ def mission(client):
     score2 = 0
 
     if len(group1) == 2 and len(group2) == 2:
+        # Server sends start message
         msg = "\nWelcome to Keyboard Spamming Battle Royal!\n " \
               "Group 1: \n" \
               "== \n" + str(group1[0]) + str(group1[1]) + "\n\n" + "Group 2: \n" + "== \n" + str(group2[0]) + str(group2[1]) + "\n" + \
@@ -76,12 +86,14 @@ def mission(client):
         count = 0
         t_end = time.time() + PLAYTIME
         data = None
+        # Server receives messages for a limited time (Play time)
         while time.time() < t_end:
             if data:
                 print(data.decode('ascii'))
                 count += 1
             data = client.recv(1)
 
+        # Server calculates each team score
         print_lock.acquire()
         if j == 1:
             score1 += count
@@ -95,6 +107,7 @@ def mission(client):
 
         time.sleep(1)
 
+        # Server sends each team their own score and the winning team declaration
         msg = "you typed: " + str(count) + " keys \n"
         client.send(msg.encode('ascii'))
         if score1 > score2:
@@ -113,16 +126,19 @@ def mission(client):
 
 def establish_tcp():
     global Finished, Start
-    host = ""
     count = 0
-    port = 30546
+    # initializing socket
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.settimeout(1)
-    server_socket.bind((SERVER_IP, SERVER_PORT))
+
+    # binding port and host
+    server_socket.bind((SERVER_IP, TCPORT))
     print("server listening TCP . . .")
+    # waiting for a client to connect
     server_socket.listen(4)
     while not Finished:
         try:
+            # accept connection
             client, addr = server_socket.accept()
         except:
             continue
@@ -130,6 +146,7 @@ def establish_tcp():
         print('Connected to :', addr[0], ':', addr[1])
         count += 1
         clients.append(client)
+        # each client get a thread running his own version of 'mission'
         start_new_thread(mission, (client,))
 
     print("Game over, sending out offer requests...")

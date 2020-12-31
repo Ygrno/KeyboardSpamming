@@ -4,6 +4,7 @@ from socket import *
 
 Running = False
 PLAYTIME = 10
+UDPORT = 13117
 
 
 def client_app():
@@ -13,7 +14,7 @@ def client_app():
     client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
     client_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     client_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-    client_socket.bind(('', 13117))
+    client_socket.bind(('', UDPORT))
 
     print("Looking for a Server:")
     # Client receive UDP message (cookie + offer type + TCP PORT)
@@ -25,7 +26,7 @@ def client_app():
     encode_data = struct.unpack('Ibh', data)
     print(encode_data)
 
-    # Client Continues to search the right message
+    # Client Continues until he finds the right message
     while encode_data[0] != 0xFEEDBEEF:
         data, addr = client_socket.recvfrom(1024)
         encode_data = struct.unpack('Ibh', data)
@@ -34,6 +35,7 @@ def client_app():
     client_socket.close()
     print("Received offer from - " + str(addr[0]) + " attempting to connect...")
 
+    # now the client will try connection trough tcp with the TCP port he received from the server over UDP
     client_socket = socket(AF_INET, SOCK_STREAM)
     try:
         client_socket.connect((addr[0], encode_data[2]))
@@ -54,7 +56,6 @@ def client_app():
         ans = input()
         client_socket.send(ans.encode('ascii'))
 
-    # client_socket.send(b'ok')
     # Client receive how many keys he typed
     data = client_socket.recv(40)
     print(data.decode('ascii'))
@@ -74,7 +75,6 @@ while not Running:
     except:
         Running = False
     time.sleep(8)
-
 
 
 
